@@ -9,7 +9,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import r2_score, root_mean_squared_error, mean_absolute_error
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVC, SVR
 
@@ -19,7 +19,7 @@ import os
 import datetime
 import json
 import logging
-from tqdm.notebook import tqdm # cambiar a tqdm.standard si no es notebook
+import tqdm
 import shutil
 
 INTERVAL_LIST = {"2": [35.2],
@@ -193,7 +193,7 @@ def extract_X_y_classification(data, include_osnr=True):
 
 def initialize_classification_results():
     results = {}
-    results["model"] = None
+    results["model_params"] = {}
     results["y_test"] = []
     results["y_pred_test"] = []
     results["acc"] = {"train": [], "test": []}
@@ -253,7 +253,7 @@ def save_classification_results(results, path_file, gaussian, covariance, model,
       
     current_results = pd.concat([current_results, df_results], ignore_index=True)
     current_results.to_csv(path_file, index=False)
-def save_classification_results_detailed(results, path_file, gaussian, covariance, model, logger):
+def save_classification_results_detailed(results, path_file, gaussian, covariance, model, n_classes,logger):
     """
     Save raw results (without averaging) for each fold)
     It also include the best params for each fold.
@@ -267,6 +267,8 @@ def save_classification_results_detailed(results, path_file, gaussian, covarianc
             gaussian (int): The number of gaussians used in the model.
             covariance (str): The type of covariance used in the model.
             model (str): The name of the regression model used.
+            n_classes (str): The number of classes used in the classification.
+
     """
 
 
@@ -275,14 +277,16 @@ def save_classification_results_detailed(results, path_file, gaussian, covarianc
         dict_results = {
             str(gaussian): {
                 covariance:{
-                    model: {
-                    'metrics': {
-                        'acc': results['acc'],
-                        'precision': results['precision'],
-                        'recall': results['recall'],
-                        'f1_score': results['f1_score']
-                    },
-                    'model_params': results['model_params'],
+                    str(n_classes): {
+                        model: {
+                            'metrics': {
+                                'acc': results['acc'],
+                                'precision': results['precision'],
+                                'recall': results['recall'],
+                                'f1_score': results['f1_score']
+                            },
+                            'model_params': results['model_params'],
+                            }
                     }
                 }
             }
@@ -294,9 +298,19 @@ def save_classification_results_detailed(results, path_file, gaussian, covarianc
 
         with open(path_file, "r") as f:
             dict_results = json.load(f)
-
         # Update the results for the specific fold
-        dict_results[str(gaussian)][covariance][model] = {
+        # If gaussian type does not exist, create it
+        if str(gaussian) not in dict_results:
+            dict_results[str(gaussian)] = {}
+        # If covariance type does not exist, create it
+        if covariance not in dict_results[str(gaussian)]:
+            dict_results[str(gaussian)][covariance] = {}
+        # If n_classes type does not exist, create it
+        if str(n_classes) not in dict_results[str(gaussian)][covariance]:
+            dict_results[str(gaussian)][covariance][str(n_classes)] = {}
+        
+        # Update the results for the specific fold
+        dict_results[str(gaussian)][covariance][str(n_classes)][model] = {
             'metrics': {
                     'acc': results['acc'],
                     'precision': results['precision'],
@@ -343,7 +357,7 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     
     # 5. Iterar sobre los folds
     fold = 1
-    for train_index, test_index in skf.split(X, y):
+    for index, (train_index, test_index) in enumerate(skf.split(X, y)):
         print(f"Procesando fold {fold}/{n_splits}...")
         
         # Dividir datos
@@ -396,7 +410,7 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
         # Guardar predicciones
         results["y_test"].extend(y_test)
         results["y_pred_test"].extend(y_pred_test)
-        results["model"] = model  # Último modelo entrenado
+        results["model_params"][index] = model.best_params_
         
         fold += 1
     
@@ -415,13 +429,13 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     return results
 
 
-#==============================
+#========================================================================================================================
 # REGRESSION MODELS
-#==============================
+#========================================================================================================================
 # Calcular metricas
 def calculate_regression_metrics(y_true, y_pred):
     r2 = r2_score(y_true, y_pred)
-    rmse = root_mean_squared_error(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
     mae = mean_absolute_error(y_true, y_pred)
     return r2, rmse, mae
 # Acumular resultados
@@ -551,7 +565,13 @@ def save_regression_results_detailed(results, path_file, gaussian, covariance, m
 
         with open(path_file, "r") as f:
             dict_results = json.load(f)
-
+        # Update the results for the specific fold
+        # If gaussian type does not exist, create it
+        if str(gaussian) not in dict_results:
+            dict_results[str(gaussian)] = {}
+        # If covariance type does not exist, create it
+        if covariance not in dict_results[str(gaussian)]:
+            dict_results[str(gaussian)][covariance] = {}
         # Update the results for the specific fold
         dict_results[str(gaussian)][covariance][model] = {
             'metrics': {

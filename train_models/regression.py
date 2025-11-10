@@ -1,9 +1,10 @@
 from utils import *
+
 #=====================================================
 # Crear Logger
 #=====================================================
-timestamp = datetime.datetime.now().strftime("%d_%H%M")
-run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, 'results', f"run_{timestamp}", "logs")
+timestamp = datetime.datetime.now().strftime("%m_%d_%H%M")
+run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, 'results', f"run_{timestamp}")
 os.makedirs(run_output_dir, exist_ok=True)
 
 logger = setup_logger(run_output_dir)
@@ -29,7 +30,7 @@ models = ["DecisionTree", "SVM", "RandomForest"]
 #=====================================================
 # Compute total number of ML runs and create progress bar
 total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models)
-ml_pbar = tqdm(total=total_runs, desc='ML experiments', unit='run')
+ml_pbar = tqdm.tqdm(total=total_runs, desc="ML Model Training Progress")
 for distancia, power in dist_powers:
     for gaussian in gaussians:
         for cov in covs:

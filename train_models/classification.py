@@ -2,7 +2,7 @@ from utils import *
 #=====================================================
 # Configurar experimentos
 #=====================================================
-timestamp = datetime.datetime.now().strftime("%d_%H%M")
+timestamp = datetime.datetime.now().strftime("%m_%d_%H%M")
 run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, 'results_classification', f"run_{timestamp}")
 os.makedirs(run_output_dir, exist_ok=True)
 
@@ -26,13 +26,13 @@ n_classes_list = ["2", "3", "4", "5"]  # Diferentes números de clases
 #=====================================================
 total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * len(n_classes_list)
 experiment_count = 0
-ml_pbar = tqdm(total=total_runs, desc='ML experiments', unit='run')
+ml_pbar = tqdm.tqdm(total=total_runs, desc='ML experiments', unit='run')
 for distancia,power in dist_powers:
     for gaussian in gaussians:
         for cov in covs:
-            logger.info(f"\n{'='*70}")
+
             logger.info(f"Cargando dataset: {distancia}km, {power}dBm, {gaussian} gaussians, {cov}")
-            logger.info(f"{'='*70}")
+
             
             # Cargar dataset
             try:
@@ -68,6 +68,8 @@ for distancia,power in dist_powers:
                         filename_w = os.path.join(output_dir, f'class_results_w_{n_classes}classes.csv')
                         save_classification_results(results_w, filename_w,
                                                      gaussian, cov, model_name, n_classes)
+                        save_classification_results_detailed(results_w, os.path.join(output_dir, f'class_results_detailed_w_{n_classes}classes.json'),
+                                                             gaussian, cov, model_name, n_classes, logger)
                         logger.info(f"Resultados CON OSNR guardados en: {filename_w}")
                         
                     except Exception as e:
@@ -87,6 +89,8 @@ for distancia,power in dist_powers:
                         filename_wo = os.path.join(output_dir, f'class_results_wo_{n_classes}classes.csv')
                         save_classification_results(results_wo, filename_wo, 
                                                     gaussian, cov, model_name, n_classes)
+                        save_classification_results_detailed(results_wo, os.path.join(output_dir, f'class_results_detailed_wo_{n_classes}classes.json'),
+                                                             gaussian, cov, model_name, n_classes, logger)
                         logger.info(f"Resultados SIN OSNR guardados en: {filename_wo}")
                         
                     except Exception as e:
@@ -99,3 +103,4 @@ for distancia,power in dist_powers:
                         pass
 logger.info("\n" + "="*70)
 logger.info("EXPERIMENTOS FINALIZADOS")
+
