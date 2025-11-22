@@ -4,7 +4,7 @@ from utils import *
 # Crear Logger
 #=====================================================
 timestamp = datetime.datetime.now().strftime("%m_%d_%H%M")
-run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, 'results', f"run_{timestamp}")
+run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, 'results_regression', f"run_{timestamp}")
 os.makedirs(run_output_dir, exist_ok=True)
 
 logger = setup_logger(run_output_dir)
@@ -16,7 +16,7 @@ logger = setup_logger(run_output_dir)
 distancias = [0, 270]
 powers = [0, 0, 9]
 dist_powers = [(0,0), (270,0), (270,9)]
-gaussians = [16,24,32]
+gaussians = [16, 24, 32, 40, 48, 56, 64]
 covs = ["diag", "spherical"]
 # TODO: Agregar más modelos si es necesario
 # - Agregar MLP -> Modelo Multimodal. => informacion en Agregar optuna.

@@ -16,10 +16,10 @@ logger.info("="*70)
 # Parámetros de experimentación
 #=====================================================
 dist_powers = [(0,0), (270,0), (270,9)]
-gaussians = [16, 24, 32]
+gaussians = [16, 24, 32, 40, 48, 56, 64]
 covs = ["diag", "spherical"]
 models = ["DecisionTree", "SVM", "RandomForest"]
-n_classes_list = ["2", "3", "4", "5"]  # Diferentes números de clases
+#n_classes_list = ["2", "3", "4", "5", "6", "8", "full"]  # Diferentes números de clases
 
 #=====================================================
 # Iterar sobre todos los escenarios
@@ -41,7 +41,13 @@ for distancia,power in dist_powers:
             except Exception as e:
                 logger.error(f"ERROR al cargar dataset: {e}")
                 continue
-            
+            if (distancia, power) == (0,0):
+                n_classes_list = list(INTERVAL_LIST_0_0.keys())
+            elif (distancia, power) == (270,0):
+                n_classes_list = list(INTERVAL_LIST_270_0.keys())
+            elif (distancia, power) == (270,9):
+                n_classes_list = list(INTERVAL_LIST_270_9.keys())
+
             for n_classes in n_classes_list:
                 for model_name in models:
                     experiment_count += 1
@@ -62,7 +68,8 @@ for distancia,power in dist_powers:
                             model_name, 
                             logger=logger,
                             n_classes=n_classes,                            
-                            include_osnr=True
+                            include_osnr=True,
+                            BD=(distancia, power)
                         )
                         
                         filename_w = os.path.join(output_dir, f'class_results_w_{n_classes}classes.csv')
@@ -83,7 +90,8 @@ for distancia,power in dist_powers:
                             model_name,
                             logger=logger,
                             n_classes=n_classes,                            
-                            include_osnr=False
+                            include_osnr=False,
+                            BD=(distancia, power)
                         )
                         
                         filename_wo = os.path.join(output_dir, f'class_results_wo_{n_classes}classes.csv')

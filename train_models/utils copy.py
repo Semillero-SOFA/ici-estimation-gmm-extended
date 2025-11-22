@@ -22,62 +22,48 @@ import logging
 import tqdm
 import shutil
 
-INTERVAL_LIST_0_0 = {"2": [35.2],
-                    "3": [31.5, 35.2],
-                    "4": [30.0, 32.5, 35.2],
-                    "5": [30.0, 31.5, 33.5, 35.2],
-                    "7": [29.5, 31.0, 32.5, 34.0, 35.2, 36.0],
-                    "9": [29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.2, 36.0],
-                    "12": [29.0,30.0,31.0,32.0,33.0,34.0,34.5,35.2,35.5,36.0,37.5],
-                    "18": [28.5,29.0,29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5],
-                    }
-INTERVAL_LIST_270_0 = {"2": [35.2],
-                    "3": [31.5, 35.2],
-                    "4": [30.0, 32.5, 35.2],
-                    "5": [30.0, 31.5, 33.5, 35.2],
-                    "8": [30.0,31.0,32.0,33.0,34.0,35.2,36.0],
-                    "10": [30.0,31.0,32.0,33.0,34.0,35.2,35.5,36.0,37.5],
-                    "11": [30.0,31.0,32.0,33.0,34.0,34.5,35.2,35.5,36.0,37.5],
-                    "16": [29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5]
-                    }
-INTERVAL_LIST_270_9 = {"2": [35.2],
-                    "3": [31.5, 35.2],
-                    "4": [30.0, 32.5, 35.2],
-                    "5": [30.0, 31.5, 33.5, 35.2],
-                    "7": [30.0,31.5,33.0,34.0,35.2,36.0],
-                    "11": [29.5,30.5,31.5,32.5,33.5,34.5,35.2,35.5,36.0,37.5],
-                    "12": [29.5,30.5,31.5,32.5,33.5,34.0,34.5,35.2,35.5,36.0,37.5],
-                    "17": [29.0,29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5]
-                    }
+INTERVAL_LIST = {"2": [35.2],
+                 "3": [31.5, 35.2],
+                 "4": [30.0, 32.5, 35.2],
+                 "5": [30.0, 31.5, 33.5, 35.2]}
+
 # Grid de parámetros para cada modelo
 PARAMS_GRID_CLASSIFICATION = {
     'DecisionTree': {
-        'max_depth': [5, 10, 15, 20],
+        'max_depth': [5, 10, 15, 20, None],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4]
     },
     'SVM': {
-        'C': [0.001, 0.01, 0.1, 1, 10, 100],
-        'gamma': ['auto', 0.001, 0.01, 0.1, 1, 10, 100],
+        'C': [0.01, 0.1, 1, 10, 100],
+        'gamma': ['auto', 0.01, 0.1, 1, 10, 100],
         'kernel': ['rbf']
     },
     'RandomForest': {
-        'n_estimators': [10, 50, 100, 200],
-        'max_depth': [5, 10, 20]
+        'n_estimators': [50, 100, 200],
+        'max_depth': [10, 20, None],
+        'min_samples_split': [2, 5],
+        'min_samples_leaf': [1, 2]
     }
 }
 
 
 PARAMS_GRID_REGRESSION = {
     'DecisionTree': {
-        'max_depth': [5, 10, 15, 20],
+        'max_depth': [5, 10, 15, 20, None],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4]
     },
     'SVM': {
-        'C': [0.001, 0.01, 0.1, 1, 10, 100],
-        'gamma': ['auto', 0.001, 0.01, 0.1, 1, 10, 100],
+        'C': [0.1, 1, 10, 100],
+        'gamma': ['scale', 'auto', 0.1, 1],
         'kernel': ['rbf']
     },
     'RandomForest': {
-        'n_estimators': [10, 50, 100, 200],
-        'max_depth': [5, 10, 20]
+        'n_estimators': [50, 100, 200],
+        'max_depth': [10, 20, None],
+        'min_samples_split': [2, 5],
+        'min_samples_leaf': [1, 2]
     }
 }
 
@@ -123,13 +109,12 @@ def spacing_to_class(spacing_value, interval_list):
             return i
     return len(interval_list)  # Última clase
 
-def transform_to_classification(data, BD=(0,0), n_classes="2"):
+def transform_to_classification(data, n_classes="2"):
     """
     Transforma el dataset de regresión a clasificación
     
     Args:
         data (pd.DataFrame): Dataset original
-        BD (tuple): Base de datos a utilizar (0,0), (270,0), (270,9)
         n_classes (str): Número de clases ("2", "3", "4", "5")
     
     Returns:
@@ -142,14 +127,7 @@ def transform_to_classification(data, BD=(0,0), n_classes="2"):
         data["spacing"] = data["spacing"].str.replace('GHz', '').astype(float)
     
     # Obtener intervalos para el número de clases especificado
-    if BD == (0,0):
-        interval_list = INTERVAL_LIST_0_0[n_classes]
-    elif BD == (270,0):
-        interval_list = INTERVAL_LIST_270_0[n_classes]
-    elif BD == (270,9):
-        interval_list = INTERVAL_LIST_270_9[n_classes]
-    else:
-        raise ValueError(f"Base de datos {BD} no soportada.")
+    interval_list = INTERVAL_LIST[n_classes]
     
     # Convertir spacing a clases
     data["spacing_class"] = data["spacing"].apply(
@@ -349,7 +327,7 @@ def save_classification_results_detailed(results, path_file, gaussian, covarianc
     logger.info(log_msg)
 
 
-def train_test_classification_model(data, model_name, logger, n_classes="2", include_osnr=True, BD=(0,0)):
+def train_test_classification_model(data, model_name, logger, n_classes="2", include_osnr=True):
     """
     Entrena un modelo de clasificación con validación cruzada estratificada
     
@@ -358,7 +336,6 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
         model_name (str): Nombre del modelo ('DecisionTree', 'SVM', 'RandomForest')
         n_classes (str): Número de clases ("2", "3", "4", "5")
         include_osnr (bool): Si incluir OSNR como feature
-        BD (tuple): Identificador de la base de datos (0,0), (270,0), (270,9)
     
     Returns:
         dict: Resultados del entrenamiento y evaluación
@@ -366,7 +343,7 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     results = initialize_classification_results()
     
     # 1. Transformar datos a problema de clasificación
-    data_class = transform_to_classification(data, n_classes=n_classes, BD=BD)
+    data_class = transform_to_classification(data, n_classes=n_classes)
     
     # 2. Extraer features y target
     X, y = extract_X_y_classification(data_class, include_osnr=include_osnr)
@@ -379,8 +356,9 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     params = PARAMS_GRID_CLASSIFICATION[model_name]
     
     # 5. Iterar sobre los folds
-
+    fold = 1
     for index, (train_index, test_index) in enumerate(skf.split(X, y)):
+        print(f"Procesando fold {fold}/{n_splits}...")
         
         # Dividir datos
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
@@ -394,19 +372,20 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
         # Crear modelo con GridSearchCV
         base_model = choose_classification_model(model_name)
         
+        # Usar f1_weighted para GridSearch en problemas multiclase
         model = GridSearchCV(
             estimator=base_model,
             param_grid=params,
             cv=3,
             n_jobs=-1,
-            scoring='balanced_accuracy',
+            scoring='f1_weighted',
             verbose=0
         )
         
         # Entrenar modelo
         model.fit(X_train_scaled, y_train)
         
-        logger.info(f"Mejores parámetros fold {index}: {model.best_params_}")
+        logger.info(f"Mejores parámetros fold {fold}: {model.best_params_}")
         
         # Predicciones
         y_pred_train = model.predict(X_train_scaled)
@@ -432,6 +411,8 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
         results["y_test"].extend(y_test)
         results["y_pred_test"].extend(y_pred_test)
         results["model_params"][index] = model.best_params_
+        
+        fold += 1
     
     # Imprimir resumen
     # print(f"\n{'='*50}")
@@ -655,9 +636,9 @@ def train_test_regression_model(data, model_name, logger, include_osnr=True):
         # 3. Definir modelo
 
 
-        model_base = choose_model_regression(model_name)
+        model = choose_model_regression(model_name)
 
-        model = GridSearchCV(estimator=model_base,
+        model = GridSearchCV(estimator=model,
                              param_grid=params, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
         
         #log(best_model.best_params_.values()) # Imprimir mejores parámetros
