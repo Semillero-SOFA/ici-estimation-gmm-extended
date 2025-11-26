@@ -68,16 +68,16 @@ PARAMS_GRID_CLASSIFICATION = {
 
 PARAMS_GRID_REGRESSION = {
     'DecisionTree': {
-        'max_depth': [5, 10, 15, 20],
+        'max_depth': [3, 5, 10, 15],
     },
     'SVM': {
         'C': [0.001, 0.01, 0.1, 1, 10, 100],
-        'gamma': ['auto', 0.001, 0.01, 0.1, 1, 10, 100],
+        'gamma': ['auto', 0.00001, 0.0001, 0.001, 0.01, 0.1, 1],
         'kernel': ['rbf']
     },
     'RandomForest': {
         'n_estimators': [10, 50, 100, 200],
-        'max_depth': [5, 10, 20]
+        'max_depth': [3, 5, 10, 15]
     }
 }
 

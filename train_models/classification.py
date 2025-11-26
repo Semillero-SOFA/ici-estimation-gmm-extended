@@ -24,7 +24,7 @@ models = ["DecisionTree", "SVM", "RandomForest"]
 #=====================================================
 # Iterar sobre todos los escenarios
 #=====================================================
-total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * len(n_classes_list)
+total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * 8
 experiment_count = 0
 ml_pbar = tqdm.tqdm(total=total_runs, desc='ML experiments', unit='run')
 for distancia,power in dist_powers:
