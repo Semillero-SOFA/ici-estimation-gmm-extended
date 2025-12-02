@@ -13,7 +13,7 @@ from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVC, SVR
 
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder, MinMaxScaler
 import matplotlib.pyplot as plt
 import os
 import datetime
@@ -55,13 +55,13 @@ PARAMS_GRID_CLASSIFICATION = {
         'max_depth': [5, 10, 15, 20],
     },
     'SVM': {
-        'C': [0.001, 0.01, 0.1, 1, 10, 100],
-        'gamma': ['auto', 0.001, 0.01, 0.1, 1, 10, 100],
+        'C': [ 0.01, 0.1, 1, 10, 100, 200],
+        'gamma': ['auto', 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10],
         'kernel': ['rbf']
     },
     'RandomForest': {
-        'n_estimators': [10, 50, 100, 200],
-        'max_depth': [5, 10, 20]
+        'n_estimators': [10, 50, 100, 200, 300, 400],
+        'max_depth': [3, 5, 10, 20, 40]
     }
 }
 
@@ -373,7 +373,7 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     
     # 3. Configurar validación cruzada estratificada
     n_splits = 5
-    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=123)
     
     # 4. Extraer parámetros para el modelo
     params = PARAMS_GRID_CLASSIFICATION[model_name]
@@ -387,19 +387,25 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
         # Escalar features (fit solo con train)
-        scaler = StandardScaler().fit(X_train)
+        #scaler = StandardScaler().fit(X_train)
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
         X_train_scaled = scaler.transform(X_train)
         X_test_scaled = scaler.transform(X_test)
         
         # Crear modelo con GridSearchCV
         base_model = choose_classification_model(model_name)
         
+        # de acuerdo al numero de clases = 2 utilizar f1 binary o f1 macro
+        if n_classes == "2":
+            scoring_metric = 'f1'
+        else:
+            scoring_metric = 'f1_weighted'
         model = GridSearchCV(
             estimator=base_model,
             param_grid=params,
             cv=3,
             n_jobs=-1,
-            scoring='balanced_accuracy',
+            scoring=scoring_metric,
             verbose=0
         )
         
@@ -413,11 +419,12 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
         y_pred_test = model.predict(X_test_scaled)
         
         # Calcular métricas
+        avg = 'binary' if n_classes == "2" else 'weighted'
         train_acc, train_prec, train_rec, train_f1 = calculate_classification_metrics(
-            y_train, y_pred_train
+            y_train, y_pred_train, average = avg
         )
         test_acc, test_prec, test_rec, test_f1 = calculate_classification_metrics(
-            y_test, y_pred_test
+            y_test, y_pred_test, average = avg
         )
         
         # Acumular resultados
