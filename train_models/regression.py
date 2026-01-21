@@ -23,7 +23,7 @@ covs = ["diag", "spherical"]
 # - Agregar ejecucion segundo plano. tmux. No hup
 # - Verificar que agrega sobre logger. Hacer copias de seguridad 
 # - Agregar hiperparametros a el csv que se guarda
-models = ["DecisionTree", "SVM", "RandomForest"]
+models = ["XGBoost"]
 
 #=====================================================
 # Iterar sobre todos los escenarios (ML models only)
@@ -33,6 +33,7 @@ total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models)
 ml_pbar = tqdm.tqdm(total=total_runs, desc="ML Model Training Progress")
 for distancia, power in dist_powers:
     for gaussian in gaussians:
+        # TODO: Run in parallel
         for cov in covs:
             database = extract_df(distancia, power, gaussian, cov)
             for model_name in models:

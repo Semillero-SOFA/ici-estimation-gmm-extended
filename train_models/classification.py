@@ -18,7 +18,8 @@ logger.info("="*70)
 dist_powers = [(0,0), (270,0), (270,9)]
 gaussians = [16, 24, 32, 40, 48, 56, 64]
 covs = ["diag", "spherical"]
-models = ["DecisionTree", "SVM", "RandomForest"]
+#models = ["DecisionTree", "SVM", "RandomForest"]
+models = ['XGBoost']
 #n_classes_list = ["2", "3", "4", "5", "6", "8", "full"]  # Diferentes números de clases
 
 #=====================================================
@@ -29,6 +30,7 @@ experiment_count = 0
 ml_pbar = tqdm.tqdm(total=total_runs, desc='ML experiments', unit='run')
 for distancia,power in dist_powers:
     for gaussian in gaussians:
+        #TODO: Run in parallel
         for cov in covs:
 
             logger.info(f"Cargando dataset: {distancia}km, {power}dBm, {gaussian} gaussians, {cov}")

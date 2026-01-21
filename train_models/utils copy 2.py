@@ -388,7 +388,7 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     
     # 3. Configurar validación cruzada estratificada
     n_splits = 5
-    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=123)
     
     # 4. Extraer parámetros para el modelo
     params = PARAMS_GRID_CLASSIFICATION[model_name]
@@ -402,8 +402,8 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
         # Escalar features (fit solo con train)
-        scaler = StandardScaler().fit(X_train)
-        #scaler = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
+        #scaler = StandardScaler().fit(X_train)
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
         X_train_scaled = scaler.transform(X_train)
         X_test_scaled = scaler.transform(X_test)
         
@@ -420,7 +420,7 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
             param_grid=params,
             cv=3,
             n_jobs=-1,
-            scoring='balanced_accuracy',
+            scoring=scoring_metric,
             verbose=0
         )
         
@@ -434,8 +434,7 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
         y_pred_test = model.predict(X_test_scaled)
         
         # Calcular métricas
-        #avg = 'binary' if n_classes == "2" else 'weighted'
-        avg = 'weighted'
+        avg = 'binary' if n_classes == "2" else 'weighted'
         train_acc, train_prec, train_rec, train_f1 = calculate_classification_metrics(
             y_train, y_pred_train, average = avg
         )
