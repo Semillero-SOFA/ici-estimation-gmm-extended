@@ -470,6 +470,100 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     
     return results
 
+def train_test_classification_all_predictions(data, model_names, logger, n_classes="2", include_osnr=True, BD=(0,0)):
+    '''
+    Función principal para entrenar y evaluar un modelo.
+    Separa los datos por KFolds, en cada uno entrena un modelo de ML distinto
+    Al final de cada KFold se obtienen los resultados del la predicción de esos datos y se van acumulando
+    Utiliza Crossvalidación en GridSearch.
+    Al salir del bucle se tienen todas las predicciones de todos los datos y se calculan las métricas globales.
+    En este caso no se puede obtener el modelo final, ya que se tienen varios modelos (uno por KFold)
+    
+    Args:
+        data (pd.DataFrame): Dataset original
+        model_names (list): Lista de nombres de modelos a entrenar
+        n_classes (str): Número de clases ("2", "3", "4", "5")
+        include_osnr (bool): Si incluir OSNR como feature
+        BD (tuple): Identificador de la base de datos (0,0), (270,0), (270,9)
+    
+    Returns:
+        dict: Resultados del entrenamiento y evaluación con métricas globales
+    '''
+    results = initialize_classification_results()
+    
+    # 1. Transformar datos a problema de clasificación
+    data_class = transform_to_classification(data, n_classes=n_classes, BD=BD)
+    
+    # 2. Extraer features y target
+    X, y = extract_X_y_classification(data_class, include_osnr=include_osnr)
+    
+    # 3. Configurar validación cruzada estratificada
+    n_splits = len(model_names)
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    
+    # 4. Iterar sobre los folds, asignando un modelo diferente a cada uno
+    for index, (train_index, test_index) in enumerate(skf.split(X, y)):
+        
+        # Seleccionar modelo para este fold
+        model_name = model_names[index]
+        
+        # Dividir datos
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        
+        # Escalar features (fit solo con train)
+        scaler = StandardScaler().fit(X_train)
+        X_train_scaled = scaler.transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+        
+        # Crear modelo con GridSearchCV
+        base_model = choose_classification_model(model_name)
+        params = PARAMS_GRID_CLASSIFICATION[model_name]
+        
+        # Configurar métrica de scoring
+        if n_classes == "2":
+            scoring_metric = 'f1'
+        else:
+            scoring_metric = 'f1_weighted'
+            
+        model = GridSearchCV(
+            estimator=base_model,
+            param_grid=params,
+            cv=3,
+            n_jobs=-1,
+            scoring='balanced_accuracy',
+            verbose=0
+        )
+        
+        # Entrenar modelo
+        model.fit(X_train_scaled, y_train)
+        
+        logger.info(f"Fold {index} - Modelo: {model_name} - Mejores parámetros: {model.best_params_}")
+        
+        # Predicciones
+        y_pred_test = model.predict(X_test_scaled)
+        
+        # Acumular predicciones de test
+        results["y_test"].extend(y_test)
+        results["y_pred_test"].extend(y_pred_test)
+        results["model_params"][index] = {
+            'model_name': model_name,
+            'best_params': model.best_params_
+        }
+    
+    # 5. Calcular métricas globales sobre todas las predicciones acumuladas
+    avg = 'weighted'
+    test_acc, test_prec, test_rec, test_f1 = calculate_classification_metrics(
+        results["y_test"], results["y_pred_test"], average=avg
+    )
+    
+    # Guardar métricas globales
+    results["acc"]["test"] = [test_acc]
+    results["precision"]["test"] = [test_prec]
+    results["recall"]["test"] = [test_rec]
+    results["f1_score"]["test"] = [test_f1]
+    
+    return results
 
 #========================================================================================================================
 # REGRESSION MODELS
@@ -707,4 +801,90 @@ def train_test_regression_model(data, model_name, logger, include_osnr=True):
         results["y_pred_test"].extend(y_pred_test)
         results["model_params"][index] = model.best_params_  # Save best_params in each fold
 
+    return results
+
+def train_test_regression_all_models(data, models_name, logger, include_osnr=True):
+    '''
+    Función principal para entrenar y evaluar un modelo.
+    Separa los datos por KFolds, en cada uno entrena un modelo de ML distinto
+    Al final de cada KFold se obtienen los resultados del la predicción de esos datos y se van acumulando
+    Utiliza Crossvalidación en GridSearch.
+    Al salir del bucle se tienen todas las predicciones de todos los datos y se calculan las métricas globales.
+    En este caso no se puede obtener el modelo final, ya que se tienen varios modelos (uno por KFold)
+    
+    Args:
+        data (pd.DataFrame): Dataset original
+        models_name (list): Lista de nombres de modelos a entrenar
+        logger: Logger configurado
+        include_osnr (bool): Si incluir OSNR como feature
+    
+    Returns:
+        dict: Resultados del entrenamiento y evaluación con métricas globales
+    '''
+    results = initialize_regression_results()
+    
+    # 1. Preparar datos
+    X, y = extract_X_y_regression(data, include_osnr=include_osnr)
+    
+    # 2. Configurar validación cruzada estratificada
+    n_splits = len(models_name)
+    
+    # Convertir y a bins para estratificación
+    y_bins = LabelEncoder().fit_transform(y)
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    
+    # 3. Iterar sobre los folds, asignando un modelo diferente a cada uno
+    for index, (train_index, test_index) in enumerate(skf.split(X, y_bins)):
+        
+        # Seleccionar modelo para este fold
+        model_name = models_name[index]
+        
+        # Dividir datos
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        
+        # Escalar features (fit solo con train)
+        scaler = StandardScaler().fit(X_train)
+        X_train_scaled = scaler.transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+        
+        # Crear modelo con GridSearchCV
+        model_base = choose_model_regression(model_name)
+        params = PARAMS_GRID_REGRESSION[model_name]
+        
+        model = GridSearchCV(
+            estimator=model_base,
+            param_grid=params,
+            cv=3,
+            n_jobs=-1,
+            scoring='neg_mean_squared_error',
+            verbose=0
+        )
+        
+        # Entrenar modelo
+        model.fit(X_train_scaled, y_train)
+        
+        logger.info(f"Fold {index} - Modelo: {model_name} - Mejores parámetros: {model.best_params_}")
+        
+        # Predicciones
+        y_pred_test = model.predict(X_test_scaled)
+        
+        # Acumular predicciones de test
+        results["y_test"].extend(y_test)
+        results["y_pred_test"].extend(y_pred_test)
+        results["model_params"][index] = {
+            'model_name': model_name,
+            'best_params': model.best_params_
+        }
+    
+    # 4. Calcular métricas globales sobre todas las predicciones acumuladas
+    test_r2, test_rmse, test_mae = calculate_regression_metrics(
+        results["y_test"], results["y_pred_test"]
+    )
+    
+    # Guardar métricas globales
+    results["r2"]["test"] = [test_r2]
+    results["rmse"]["test"] = [test_rmse]
+    results["mae"]["test"] = [test_mae]
+    
     return results
