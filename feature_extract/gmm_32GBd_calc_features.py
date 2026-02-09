@@ -3,6 +3,7 @@
 
 # Libraries
 import os
+import argparse
 
 from collections import defaultdict
 from itertools import product
@@ -14,7 +15,6 @@ from scipy.io import loadmat
 
 #import sofa
 from utilities import sofa, gmm_utils
-import gmm_utils
 
 import json
 import csv
@@ -29,14 +29,15 @@ import re
 # GLOBAL_RESULTS_DIR = f"{GLOBAL_ROOT}/results"
 FILENAME = os.path.basename(__file__)[:-3]
 
-#DATABASE_DIR = "D:/Semillero SOFA/Data_SOFA_2024/Data_Mat/BetterNames"
-DATABASE_DIR = "D:/Semillero SOFA/Data_SOFA_2024/Data_Mat/BetterNames"
-GLOBAL_RESULTS_DIR = "D:/Semillero SOFA/gmm_32_definitivo"
+# Path to the database (with Matlab Files)
+DATABASE_DIR = R"D:\Semillero SOFA\Data32GBd\Data_Mat\BetterNames"
+# Output path for gmm features extracted
+GLOBAL_RESULTS_DIR = "D:/Semillero SOFA/gmm_32GBd_feats"
 # Create a logger for this script
 logger = sofa.setup_logger(FILENAME)
 
 # Create results directory if it doesn't exist
-RESULTS_DIR = f"{GLOBAL_RESULTS_DIR}/new_models"
+RESULTS_DIR = f"{GLOBAL_RESULTS_DIR}/Feats_init_centroids"
 Path(RESULTS_DIR).mkdir(parents=True, exist_ok=True)
 
 
@@ -149,7 +150,7 @@ def load_32gbaud_db(
     return data
 
 
-def calculate_gmm_2d(input_data, n_componentes, covariance_type):
+def calculate_gmm_2d(input_data, n_componentes, covariance_type, init_centroids=False):
     """
     Calculate a 2D Gaussian Mixture Model (GMM) for the given input data.
 
@@ -157,34 +158,58 @@ def calculate_gmm_2d(input_data, n_componentes, covariance_type):
         input_data (np.ndarray): Input data for GMM fitting.
         n_componentes (int): Number of Gaussian components.
         covariance_type (str): Type of covariance to use ("full", "diag", or "spherical").
+        init_centroids (bool): Whether to initialize centroids. The centroids are initialized according to the 16-QAM constellation.
+        When n_componentes is different from 16, each centroid will be repeated.
 
     Returns:
         GaussianMixture: Fitted GMM model.
     """
-    gm_kwargs = {
-        "n_components": n_componentes,
-        "covariance_type": covariance_type,
-        "random_state": 42
-    }
+    if init_centroids:
+        # Define 16-QAM centroids
+        qam_16_centroids = np.array([
+            [-3, -3], [-3, -1], [-3, 1], [-3, 3],
+            [-1, -3], [-1, -1], [-1, 1], [-1, 3],
+            [1, -3], [1, -1], [1, 1], [1, 3],
+            [3, -3], [3, -1], [3, 1], [3, 3]
+        ])
+        # Repeat centroids if n_componentes > 16
+        if n_componentes > 16:
+            repeats = n_componentes // 16 + (n_componentes % 16 > 0)
+            centroids = np.tile(qam_16_centroids, (repeats, 1))[:n_componentes]
+        else:
+            centroids = qam_16_centroids[:n_componentes]
+        gm_kwargs = {
+            "n_components": n_componentes,
+            "covariance_type": covariance_type,
+            "init_params": "kmeans",
+            "means_init": centroids,
+            "random_state": 42
+        }
+    else: 
+        gm_kwargs = {
+            "n_components": n_componentes,
+            "covariance_type": covariance_type,
+            "random_state": 42
+        }
     return gmm_utils.calculate_gmm(input_data, gm_kwargs)
 
-def process_channel(x_ch, n_componentes, covariance_type):
+def process_channel(x_ch, n_componentes, covariance_type, init_centroids=False):
     """
     Process a single channel scenario and calculate its GMM.
     Args:
         x_ch (np.ndarray): Channel data (it's a 2D array with real and imaginary parts).
         n_componentes (int): Number of Gaussian components.
         covariance_type (str): Type of covariance to use ("full", "diag", or "spherical").
-    Returns:
+        init_centroids (bool): Whether to initialize centroids. The centroids are initialized according to the 16-QAM constellation.
         GaussianMixture: Fitted GMM model for the channel.
     """
     input_data = np.vstack((x_ch.real, x_ch.imag)).T
-    gm_2d = calculate_gmm_2d(input_data, n_componentes, covariance_type)
+    gm_2d = calculate_gmm_2d(input_data, n_componentes, covariance_type, init_centroids=init_centroids)
 
     return gm_2d
 
 
-def process_all_channels(df, spacing, osnr,X_chs, bins, limits, n_componentes, covariance_type):
+def process_all_channels(df, spacing, osnr,X_chs, bins, limits, n_componentes, covariance_type, init_centroids=False):
     """
     Iterate over all spacing and OSNR values from dataset, process all of them and
     extract GMM parameters (weights, means and covariances) into a dataframe.
@@ -200,7 +225,7 @@ def process_all_channels(df, spacing, osnr,X_chs, bins, limits, n_componentes, c
         pd.DataFrame: Updated DataFrame with GMM parameters, spacing, and OSNR.
     """
     for x_ch in X_chs:
-        gm_2d = process_channel(x_ch, n_componentes, covariance_type)
+        gm_2d = process_channel(x_ch, n_componentes, covariance_type, init_centroids=init_centroids)
         # Extract GMM parameters
         weights = gm_2d.weights_.tolist()
         means = gm_2d.means_.flatten().tolist()
@@ -230,7 +255,7 @@ def process_all_channels(df, spacing, osnr,X_chs, bins, limits, n_componentes, c
     return df
 
 
-def calculate_gmm_and_histograms(data):
+def calculate_gmm_and_histograms(data, init_centroids=False) -> dict:
     """
     Calculate GMM models and histograms (not included) for the provided dataset.
     In this case, it's a 32 GBd database, and save into a csv file the GMM parameters.
@@ -269,24 +294,22 @@ def calculate_gmm_and_histograms(data):
                                     for orth, X_rx in orths.items():
                                         logger.info(f"Calculating GMM for: {distance}/{power}/{spacing}/{osnr}/{song}/{orth}")
                                         X_chs = gmm_utils.split(X_rx, 3)
-                                        df = process_all_channels(df, spacing, osnr, X_chs, bins, limits, n_componentes, covariance_type)
+                                        df = process_all_channels(df, spacing, osnr, X_chs, bins, limits, n_componentes, covariance_type, init_centroids=init_centroids)
 
                         df.to_csv(file_models_gmm_csv, index=False)
 
     return dict(histograms_gmm)
 
 def main():
-    # Load data
-    # folder_rx = f"{DATABASE_DIR}/Estimation/32GBd"
     folder_rx = f"{DATABASE_DIR}"
-    print("jaksdkasjd")
-    # Read received data
-    # logger.info("Reading data...")
-    # data = read_data(folder_rx)
 
-    # gmm_utils.calc_once(
-    #         "models_tuple", calculate_gmm_and_histograms, {"data": data})
-    # logger.info("Features calculated successfully")
+    # Read received data
+    logger.info("Reading data...")
+    data = read_data(folder_rx)
+    print("Data read succesfully")
+    gmm_utils.calc_once(
+            "models_tuple", calculate_gmm_and_histograms, {"data": data})
+    logger.info("Features calculated successfully")
 
 if __name__ == "__main__":
     main()
