@@ -25,7 +25,7 @@ def run_regression_single_model(dist_powers, gaussians, covs, models, timestamp,
                 logger.info(f"Cargando dataset: {distancia}km, {power}dBm, {gaussian} gaussians, {cov}")
                 
                 try:
-                    database = extract_df(distancia, power, gaussian, cov)
+                    database = extract_df(distancia, power, gaussian, cov, datasets_dir)
                     logger.info(f"Dataset cargado exitosamente. Shape: {database.shape}")
                 except Exception as e:
                     logger.error(f"ERROR al cargar dataset: {e}")
