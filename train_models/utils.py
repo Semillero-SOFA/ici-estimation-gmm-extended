@@ -95,13 +95,13 @@ PARAMS_GRID_REGRESSION = {
 }
 
 
-GLOBAL_RESULTS_DIR = "D:/Semillero SOFA/gmm_32_definitivo"
-DATASETS_DIR = f"{GLOBAL_RESULTS_DIR}/new_models"
+# GLOBAL_RESULTS_DIR = "D:/Semillero SOFA/gmm_32_definitivo"
+# DATASETS_DIR = f"{GLOBAL_RESULTS_DIR}/new_models"
 
 # Cargar datos
-def extract_df(dis, power, gauss, cov):
+def extract_df(dis, power, gauss, cov, datasets_dir):
     sub_dir = f"{dis}km{power}dBm/{gauss}_gaussians"
-    df = pd.read_csv(f"{DATASETS_DIR}/{sub_dir}/models32_gmm_{cov}.csv")
+    df = pd.read_csv(f"{datasets_dir}/{sub_dir}/models32_gmm_{cov}.csv")
     return df
 
 def setup_logger(name: str) -> logging.Logger:

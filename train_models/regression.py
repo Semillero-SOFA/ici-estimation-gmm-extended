@@ -1,7 +1,7 @@
 from utils import *
 import argparse
 
-def run_regression_single_model(dist_powers, gaussians, covs, models, timestamp, logger, global_results_dir):
+def run_regression_single_model(dist_powers, gaussians, covs, models, timestamp, logger, global_results_dir, datasets_dir):
     """
     Itera sobre todas las combinaciones de parámetros y entrena un modelo por fold
     usando train_test_regression_model().
@@ -14,6 +14,7 @@ def run_regression_single_model(dist_powers, gaussians, covs, models, timestamp,
         timestamp (str): Timestamp del experimento
         logger: Logger configurado
         global_results_dir (str): Directorio global de resultados
+        datasets_dir (str): Directorio de datasets
     """
     total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models)
     ml_pbar = tqdm.tqdm(total=total_runs, desc="ML Model Training Progress")
@@ -75,7 +76,7 @@ def run_regression_single_model(dist_powers, gaussians, covs, models, timestamp,
     logger.info("EXPERIMENTOS FINALIZADOS")
 
 
-def run_regression_all_models(dist_powers, gaussians, covs, models, timestamp, logger, global_results_dir):
+def run_regression_all_models(dist_powers, gaussians, covs, models, timestamp, logger, global_results_dir, datasets_dir):
     """
     Itera sobre todas las combinaciones de parámetros y entrena múltiples modelos
     usando train_test_regression_all_models() (un modelo diferente por fold).
@@ -88,6 +89,7 @@ def run_regression_all_models(dist_powers, gaussians, covs, models, timestamp, l
         timestamp (str): Timestamp del experimento
         logger: Logger configurado
         global_results_dir (str): Directorio global de resultados
+        datasets_dir (str): Directorio de datasets
     """
     total_runs = len(dist_powers) * len(gaussians) * len(covs)
     ml_pbar = tqdm.tqdm(total=total_runs, desc="ML Model Training Progress (all models)")
@@ -98,7 +100,7 @@ def run_regression_all_models(dist_powers, gaussians, covs, models, timestamp, l
                 logger.info(f"Cargando dataset: {distancia}km, {power}dBm, {gaussian} gaussians, {cov}")
                 
                 try:
-                    database = extract_df(distancia, power, gaussian, cov)
+                    database = extract_df(distancia, power, gaussian, cov, datasets_dir)
                     logger.info(f"Dataset cargado exitosamente. Shape: {database.shape}")
                 except Exception as e:
                     logger.error(f"ERROR al cargar dataset: {e}")
@@ -192,11 +194,12 @@ parser.add_argument('--mode', type=str, default='single', choices=['single', 'al
                    help='Training mode: single (one model per fold) or all (multiple models)')
 parser.add_argument('--results_dir', type=str, default="D:/Semillero SOFA/gmm_32_definitivo",
                    help='Global results directory')
+parser.add_argument('--datasets_dir', type=str, default="D:/Semillero SOFA/gmm_32_definitivo/new_models",
+                   help='Datasets directory')
 args = parser.parse_args()
 
-# Update global variables based on arguments
 GLOBAL_RESULTS_DIR = args.results_dir
-DATASETS_DIR = f"{GLOBAL_RESULTS_DIR}/new_models"
+DATASETS_DIR = args.datasets_dir
 
 
 #=====================================================
@@ -225,8 +228,8 @@ models = ["RandomForest"]
 #=====================================================
 if args.mode == 'single':
     # Opción 1: Entrenar un modelo por fold (método tradicional)
-    run_regression_single_model(dist_powers, gaussians, covs, models, timestamp, logger, GLOBAL_RESULTS_DIR)
+    run_regression_single_model(dist_powers, gaussians, covs, models, timestamp, logger, GLOBAL_RESULTS_DIR, DATASETS_DIR)
 else:
     # Opción 2: Entrenar múltiples modelos diferentes (un modelo por fold)
     models_list = ["DecisionTree", "SVM", "RandomForest", "XGBoost"]
-    run_regression_all_models(dist_powers, gaussians, covs, models_list, timestamp, logger, GLOBAL_RESULTS_DIR)
+    run_regression_all_models(dist_powers, gaussians, covs, models_list, timestamp, logger, GLOBAL_RESULTS_DIR, DATASETS_DIR)

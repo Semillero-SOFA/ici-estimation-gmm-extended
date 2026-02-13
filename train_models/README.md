@@ -21,7 +21,8 @@ Both classification and regression scripts now support two training modes:
 
 ### Command-Line Arguments
 - `--mode`: Choose training mode (`single` or `all`)
-- `--results_dir`: Specify global results directory path (overrides default in utils.py)
+- `--results_dir`: Specify global results directory path
+- `--datasets_dir`: Specify datasets directory path
 
 ### New Functions
 - `train_test_classification_all_predictions()`: Classification with multiple models per run
@@ -33,7 +34,7 @@ Both classification and regression scripts now support two training modes:
 
 ## Data Configuration
 
-Default dataset location: `D:/Semillero SOFA/gmm_32_definitivo/new_models`
+Default dataset location: `D:/Semillero SOFA/gmm_32_definitivo/new_models` (configurable via `--datasets_dir`)
 
 Features extracted from configurations:
 - Distances: 0, 270 km
@@ -47,31 +48,38 @@ Features extracted from configurations:
 
 **Single model mode (default)**:
 ```bash
-python classification.py --mode single --results_dir "D:/Semillero SOFA/gmm_32_definitivo"
+python classification.py --mode single --results_dir "D:/Semillero SOFA/gmm_32_definitivo" --datasets_dir "D:/Semillero SOFA/gmm_32_definitivo/new_models"
 ```
 
 **Multiple models mode**:
 ```bash
-python classification.py --mode all --results_dir "D:/Semillero SOFA/gmm_32_definitivo"
+python classification.py --mode all --results_dir "D:/Semillero SOFA/gmm_32_definitivo" --datasets_dir "D:/Semillero SOFA/gmm_32_definitivo/new_models"
 ```
 
 ### Regression
 
 **Single model mode (default)**:
 ```bash
-python regression.py --mode single --results_dir "D:/Semillero SOFA/gmm_32_definitivo"
+python regression.py --mode single --results_dir "D:/Semillero SOFA/gmm_32_definitivo" --datasets_dir "D:/Semillero SOFA/gmm_32_definitivo/new_models"
 ```
 
 **Multiple models mode**:
 ```bash
-python regression.py --mode all --results_dir "D:/Semillero SOFA/gmm_32_definitivo"
+python regression.py --mode all --results_dir "D:/Semillero SOFA/gmm_32_definitivo" --datasets_dir "D:/Semillero SOFA/gmm_32_definitivo/new_models"
 ```
 
 ### Using default paths
-If using the default path in `utils.py`, omit `--results_dir`:
+If using the default paths, you can omit the directory arguments:
 ```bash
 python classification.py --mode single
 python regression.py --mode all
+```
+
+### Custom dataset location
+To use a different dataset directory:
+```bash
+python classification.py --datasets_dir "path/to/your/datasets"
+python regression.py --datasets_dir "path/to/your/datasets"
 ```
 
 ## Output Structure

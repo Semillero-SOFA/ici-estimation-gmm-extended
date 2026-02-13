@@ -1,7 +1,7 @@
 from utils import *
 import argparse
 
-def run_classification_single_model(dist_powers, gaussians, covs, models, timestamp, logger, global_results_dir):
+def run_classification_single_model(dist_powers, gaussians, covs, models, timestamp, logger, global_results_dir, datasets_dir):
     """
     Itera sobre todas las combinaciones de parámetros y entrena un modelo por fold
     usando train_test_classification_model().
@@ -14,6 +14,7 @@ def run_classification_single_model(dist_powers, gaussians, covs, models, timest
         timestamp (str): Timestamp del experimento
         logger: Logger configurado
         global_results_dir (str): Directorio global de resultados
+        datasets_dir (str): Directorio de datasets
     """
     total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * 8
     experiment_count = 0
@@ -25,7 +26,7 @@ def run_classification_single_model(dist_powers, gaussians, covs, models, timest
                 logger.info(f"Cargando dataset: {distancia}km, {power}dBm, {gaussian} gaussians, {cov}")
                 # Cargar dataset
                 try:
-                    database = extract_df(distancia, power, gaussian, cov)
+                    database = extract_df(distancia, power, gaussian, cov, datasets_dir)
                     logger.info(f"Dataset cargado exitosamente. Shape: {database.shape}")
                 except Exception as e:
                     logger.error(f"ERROR al cargar dataset: {e}")
@@ -103,7 +104,7 @@ def run_classification_single_model(dist_powers, gaussians, covs, models, timest
     logger.info("EXPERIMENTOS FINALIZADOS")
 
 
-def run_classification_all_predictions(dist_powers, gaussians, covs, models, timestamp, logger, global_results_dir):
+def run_classification_all_predictions(dist_powers, gaussians, covs, models, timestamp, logger, global_results_dir, datasets_dir):
     """
     Itera sobre todas las combinaciones de parámetros y entrena múltiples modelos
     usando train_test_classification_all_predictions() (un modelo diferente por fold).
@@ -116,6 +117,7 @@ def run_classification_all_predictions(dist_powers, gaussians, covs, models, tim
         timestamp (str): Timestamp del experimento
         logger: Logger configurado
         global_results_dir (str): Directorio global de resultados
+        datasets_dir (str): Directorio de datasets
     """
     total_runs = len(dist_powers) * len(gaussians) * len(covs) * 8
     experiment_count = 0
@@ -127,7 +129,7 @@ def run_classification_all_predictions(dist_powers, gaussians, covs, models, tim
                 logger.info(f"Cargando dataset: {distancia}km, {power}dBm, {gaussian} gaussians, {cov}")
                 
                 try:
-                    database = extract_df(distancia, power, gaussian, cov)
+                    database = extract_df(distancia, power, gaussian, cov, datasets_dir)
                     logger.info(f"Dataset cargado exitosamente. Shape: {database.shape}")
                 except Exception as e:
                     logger.error(f"ERROR al cargar dataset: {e}")
@@ -254,11 +256,12 @@ parser.add_argument('--mode', type=str, default='single', choices=['single', 'al
                    help='Training mode: single (one model per fold) or all (multiple models)')
 parser.add_argument('--results_dir', type=str, default="D:/Semillero SOFA/gmm_32_definitivo",
                    help='Global results directory')
+parser.add_argument('--datasets_dir', type=str, default="D:/Semillero SOFA/gmm_32_definitivo/new_models",
+                   help='Datasets directory')
 args = parser.parse_args()
 
-# Update global variables based on arguments
 GLOBAL_RESULTS_DIR = args.results_dir
-DATASETS_DIR = f"{GLOBAL_RESULTS_DIR}/new_models"
+DATASETS_DIR = args.datasets_dir
 
 # # Update the module-level variables in utils
 # import utils
@@ -292,7 +295,7 @@ models = ["DecisionTree", "SVM", "RandomForest", "XGBoost"]
 #=====================================================
 if args.mode == 'single':
     # Opción 1: Entrenar un modelo por fold (método tradicional)
-    run_classification_single_model(dist_powers, gaussians, covs, models, timestamp, logger, GLOBAL_RESULTS_DIR)
+    run_classification_single_model(dist_powers, gaussians, covs, models, timestamp, logger, GLOBAL_RESULTS_DIR, DATASETS_DIR)
 else:
     # Opción 2: Entrenar múltiples modelos diferentes (un modelo por fold)
-    run_classification_all_predictions(dist_powers, gaussians, covs, models, timestamp, logger, GLOBAL_RESULTS_DIR)
+    run_classification_all_predictions(dist_powers, gaussians, covs, models, timestamp, logger, GLOBAL_RESULTS_DIR, DATASETS_DIR)
