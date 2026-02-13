@@ -106,12 +106,18 @@ def extract_df(dis, power, gauss, cov, datasets_dir):
 
 def setup_logger(name: str) -> logging.Logger:
     # Setup logging
+    # Crear directorio para el log si no existe
+    log_file = f"{name}.log"
+    log_dir = os.path.dirname(log_file)
+    if log_dir:  # Solo crear si hay un directorio especificado
+        os.makedirs(log_dir, exist_ok=True)
+    
     logging.basicConfig(
         level=logging.DEBUG,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.StreamHandler(),  # Log to console
-            logging.FileHandler(f"{name}.log")
+            logging.FileHandler(log_file)
         ]
     )
     logger = logging.getLogger(name)
@@ -263,6 +269,8 @@ def save_classification_results(results, path_file, gaussian, covariance, model,
     """
     Guarda los resultados de clasificación en un CSV
     """
+    # Crear directorio padre si no existe
+    os.makedirs(os.path.dirname(path_file), exist_ok=True)
 
     if os.path.exists(path_file):
         # Save backup
@@ -307,7 +315,8 @@ def save_classification_results_detailed(results, path_file, gaussian, covarianc
             n_classes (str): The number of classes used in the classification.
 
     """
-
+    # Crear directorio padre si no existe
+    os.makedirs(os.path.dirname(path_file), exist_ok=True)
 
     # Check if the file exists
     if not os.path.exists(path_file):
@@ -639,6 +648,8 @@ def choose_model_regression(model_name):
     return model
 
 def save_regression_results(results, path_file, gaussian, covariance, model, logger):
+    # Crear directorio padre si no existe
+    os.makedirs(os.path.dirname(path_file), exist_ok=True)
    
     dict_results = {}
     metrics = ['mae', 'r2', 'rmse']
@@ -678,6 +689,8 @@ def save_regression_results_detailed(results, path_file, gaussian, covariance, m
             covariance (str): The type of covariance used in the model.
             model (str): The name of the regression model used.
     """
+    # Crear directorio padre si no existe
+    os.makedirs(os.path.dirname(path_file), exist_ok=True)
     
 
     # Check if the file exists
