@@ -24,31 +24,34 @@ import tqdm
 import shutil
 
 INTERVAL_LIST_0_0 = {"2": [35.2],
-                    "3": [31.5, 35.2],
-                    "4": [30.0, 32.5, 35.2],
-                    "5": [30.0, 31.5, 33.5, 35.2],
-                    "7": [29.5, 31.0, 32.5, 34.0, 35.2, 36.0],
-                    "9": [29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.2, 36.0],
-                    "12": [29.0,30.0,31.0,32.0,33.0,34.0,34.5,35.2,35.5,36.0,37.5],
-                    "18": [28.5,29.0,29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5],
+                    "3": [31.5, 35.2]
+                    # ,
+                    # "4": [30.0, 32.5, 35.2],
+                    # "5": [30.0, 31.5, 33.5, 35.2],
+                    # "7": [29.5, 31.0, 32.5, 34.0, 35.2, 36.0],
+                    # "9": [29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.2, 36.0],
+                    # "12": [29.0,30.0,31.0,32.0,33.0,34.0,34.5,35.2,35.5,36.0,37.5],
+                    # "18": [28.5,29.0,29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5],
                     }
 INTERVAL_LIST_270_0 = {"2": [35.2],
-                    "3": [31.5, 35.2],
-                    "4": [30.0, 32.5, 35.2],
-                    "5": [30.0, 31.5, 33.5, 35.2],
-                    "8": [30.0,31.0,32.0,33.0,34.0,35.2,36.0],
-                    "10": [30.0,31.0,32.0,33.0,34.0,35.2,35.5,36.0,37.5],
-                    "11": [30.0,31.0,32.0,33.0,34.0,34.5,35.2,35.5,36.0,37.5],
-                    "16": [29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5]
+                    "3": [31.5, 35.2]
+                    # ,
+                    # "4": [30.0, 32.5, 35.2],
+                    # "5": [30.0, 31.5, 33.5, 35.2],
+                    # "8": [30.0,31.0,32.0,33.0,34.0,35.2,36.0],
+                    # "10": [30.0,31.0,32.0,33.0,34.0,35.2,35.5,36.0,37.5],
+                    # "11": [30.0,31.0,32.0,33.0,34.0,34.5,35.2,35.5,36.0,37.5],
+                    # "16": [29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5]
                     }
 INTERVAL_LIST_270_9 = {"2": [35.2],
-                    "3": [31.5, 35.2],
-                    "4": [30.0, 32.5, 35.2],
-                    "5": [30.0, 31.5, 33.5, 35.2],
-                    "7": [30.0,31.5,33.0,34.0,35.2,36.0],
-                    "11": [29.5,30.5,31.5,32.5,33.5,34.5,35.2,35.5,36.0,37.5],
-                    "12": [29.5,30.5,31.5,32.5,33.5,34.0,34.5,35.2,35.5,36.0,37.5],
-                    "17": [29.0,29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5]
+                    "3": [31.5, 35.2]
+                    # ,
+                    # "4": [30.0, 32.5, 35.2],
+                    # "5": [30.0, 31.5, 33.5, 35.2],
+                    # "7": [30.0,31.5,33.0,34.0,35.2,36.0],
+                    # "11": [29.5,30.5,31.5,32.5,33.5,34.5,35.2,35.5,36.0,37.5],
+                    # "12": [29.5,30.5,31.5,32.5,33.5,34.0,34.5,35.2,35.5,36.0,37.5],
+                    # "17": [29.0,29.5,30.0,30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.2,35.5,36.0,37.5]
                     }
 # Grid de parámetros para cada modelo
 PARAMS_GRID_CLASSIFICATION = {
@@ -67,7 +70,7 @@ PARAMS_GRID_CLASSIFICATION = {
     'XGBoost': {
         'n_estimators': [50, 100, 200, 300],
         'max_depth': [3, 5, 7, 10],
-        'learning_rate': [0.01, 0.1, 0.3],
+        'learning_rate': [0.01, 0.05, 0.1, 0.3],
         'subsample': [0.8, 1.0]
     }
 }
@@ -89,7 +92,7 @@ PARAMS_GRID_REGRESSION = {
     'XGBoost': {
         'n_estimators': [50, 100, 200],
         'max_depth': [3, 5, 7, 10],
-        'learning_rate': [0.01, 0.1, 0.3],
+        'learning_rate': [0.01, 0.05, 0.1, 0.3],
         'subsample': [0.8, 1.0]
     }
 }
@@ -270,7 +273,9 @@ def save_classification_results(results, path_file, gaussian, covariance, model,
     Guarda los resultados de clasificación en un CSV
     """
     # Crear directorio padre si no existe
-    os.makedirs(os.path.dirname(path_file), exist_ok=True)
+    dir_path = os.path.dirname(path_file)
+    if dir_path:  # Solo si hay un directorio en la ruta
+        os.makedirs(dir_path, exist_ok=True)
 
     if os.path.exists(path_file):
         # Save backup
@@ -316,7 +321,9 @@ def save_classification_results_detailed(results, path_file, gaussian, covarianc
 
     """
     # Crear directorio padre si no existe
-    os.makedirs(os.path.dirname(path_file), exist_ok=True)
+    dir_path = os.path.dirname(path_file)
+    if dir_path:  # Solo si hay un directorio en la ruta
+        os.makedirs(dir_path, exist_ok=True)
 
     # Check if the file exists
     if not os.path.exists(path_file):
@@ -479,10 +486,10 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     
     return results
 
-def train_test_classification_all_predictions(data, model_names, logger, n_classes="2", include_osnr=True, BD=(0,0)):
+def train_test_classification_all_predictions(data, model_name, logger, n_classes="2", include_osnr=True, BD=(0,0)):
     '''
     Función principal para entrenar y evaluar un modelo.
-    Separa los datos por KFolds, en cada uno entrena un modelo de ML distinto
+    Separa los datos por KFolds, en cada uno entrena el mismo modelo con diferentes parámetros (GridSearchCV) y se obtienen las predicciones de test.
     Al final de cada KFold se obtienen los resultados del la predicción de esos datos y se van acumulando
     Utiliza Crossvalidación en GridSearch.
     Al salir del bucle se tienen todas las predicciones de todos los datos y se calculan las métricas globales.
@@ -490,7 +497,7 @@ def train_test_classification_all_predictions(data, model_names, logger, n_class
     
     Args:
         data (pd.DataFrame): Dataset original
-        model_names (list): Lista de nombres de modelos a entrenar
+        model_name (str): Nombre del modelo a entrenar
         n_classes (str): Número de clases ("2", "3", "4", "5")
         include_osnr (bool): Si incluir OSNR como feature
         BD (tuple): Identificador de la base de datos (0,0), (270,0), (270,9)
@@ -507,14 +514,14 @@ def train_test_classification_all_predictions(data, model_names, logger, n_class
     X, y = extract_X_y_classification(data_class, include_osnr=include_osnr)
     
     # 3. Configurar validación cruzada estratificada
-    n_splits = len(model_names)
+    n_splits = 5
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+    # 4. Extraer parámetros para el modelo
+    params = PARAMS_GRID_CLASSIFICATION[model_name]
     
-    # 4. Iterar sobre los folds, asignando un modelo diferente a cada uno
+    # 5. Iterar sobre los folds
     for index, (train_index, test_index) in enumerate(skf.split(X, y)):
-        
-        # Seleccionar modelo para este fold
-        model_name = model_names[index]
         
         # Dividir datos
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
@@ -527,7 +534,6 @@ def train_test_classification_all_predictions(data, model_names, logger, n_class
         
         # Crear modelo con GridSearchCV
         base_model = choose_classification_model(model_name)
-        params = PARAMS_GRID_CLASSIFICATION[model_name]
         
         # Configurar métrica de scoring
         if n_classes == "2":
@@ -555,12 +561,9 @@ def train_test_classification_all_predictions(data, model_names, logger, n_class
         # Acumular predicciones de test
         results["y_test"].extend(y_test)
         results["y_pred_test"].extend(y_pred_test)
-        results["model_params"][index] = {
-            'model_name': model_name,
-            'best_params': model.best_params_
-        }
+        results["model_params"][index] = model.best_params_
     
-    # 5. Calcular métricas globales sobre todas las predicciones acumuladas
+    # 6. Calcular métricas globales sobre todas las predicciones acumuladas
     avg = 'weighted'
     test_acc, test_prec, test_rec, test_f1 = calculate_classification_metrics(
         results["y_test"], results["y_pred_test"], average=avg
@@ -649,7 +652,9 @@ def choose_model_regression(model_name):
 
 def save_regression_results(results, path_file, gaussian, covariance, model, logger):
     # Crear directorio padre si no existe
-    os.makedirs(os.path.dirname(path_file), exist_ok=True)
+    dir_path = os.path.dirname(path_file)
+    if dir_path:  # Solo si hay un directorio en la ruta
+        os.makedirs(dir_path, exist_ok=True)
    
     dict_results = {}
     metrics = ['mae', 'r2', 'rmse']
@@ -690,7 +695,9 @@ def save_regression_results_detailed(results, path_file, gaussian, covariance, m
             model (str): The name of the regression model used.
     """
     # Crear directorio padre si no existe
-    os.makedirs(os.path.dirname(path_file), exist_ok=True)
+    dir_path = os.path.dirname(path_file)
+    if dir_path:  # Solo si hay un directorio en la ruta
+        os.makedirs(dir_path, exist_ok=True)
     
 
     # Check if the file exists
@@ -816,10 +823,10 @@ def train_test_regression_model(data, model_name, logger, include_osnr=True):
 
     return results
 
-def train_test_regression_all_models(data, models_name, logger, include_osnr=True):
+def train_test_regression_all_models(data, model_name, logger, include_osnr=True):
     '''
     Función principal para entrenar y evaluar un modelo.
-    Separa los datos por KFolds, en cada uno entrena un modelo de ML distinto
+    Separa los datos por KFolds, en cada uno entrena el mismo modelo con diferentes parámetros (GridSearchCV) y se obtienen las predicciones de test.
     Al final de cada KFold se obtienen los resultados del la predicción de esos datos y se van acumulando
     Utiliza Crossvalidación en GridSearch.
     Al salir del bucle se tienen todas las predicciones de todos los datos y se calculan las métricas globales.
@@ -827,7 +834,7 @@ def train_test_regression_all_models(data, models_name, logger, include_osnr=Tru
     
     Args:
         data (pd.DataFrame): Dataset original
-        models_name (list): Lista de nombres de modelos a entrenar
+        model_name (str): Nombre del modelo a entrenar
         logger: Logger configurado
         include_osnr (bool): Si incluir OSNR como feature
     
@@ -840,17 +847,17 @@ def train_test_regression_all_models(data, models_name, logger, include_osnr=Tru
     X, y = extract_X_y_regression(data, include_osnr=include_osnr)
     
     # 2. Configurar validación cruzada estratificada
-    n_splits = len(models_name)
+    n_splits = 5
     
     # Convertir y a bins para estratificación
     y_bins = LabelEncoder().fit_transform(y)
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
     
-    # 3. Iterar sobre los folds, asignando un modelo diferente a cada uno
+    # 3. Extraer parámetros para el modelo
+    params = PARAMS_GRID_REGRESSION[model_name]
+    
+    # 4. Iterar sobre los folds
     for index, (train_index, test_index) in enumerate(skf.split(X, y_bins)):
-        
-        # Seleccionar modelo para este fold
-        model_name = models_name[index]
         
         # Dividir datos
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
@@ -863,7 +870,6 @@ def train_test_regression_all_models(data, models_name, logger, include_osnr=Tru
         
         # Crear modelo con GridSearchCV
         model_base = choose_model_regression(model_name)
-        params = PARAMS_GRID_REGRESSION[model_name]
         
         model = GridSearchCV(
             estimator=model_base,
@@ -885,12 +891,9 @@ def train_test_regression_all_models(data, models_name, logger, include_osnr=Tru
         # Acumular predicciones de test
         results["y_test"].extend(y_test)
         results["y_pred_test"].extend(y_pred_test)
-        results["model_params"][index] = {
-            'model_name': model_name,
-            'best_params': model.best_params_
-        }
+        results["model_params"][index] = model.best_params_
     
-    # 4. Calcular métricas globales sobre todas las predicciones acumuladas
+    # 5. Calcular métricas globales sobre todas las predicciones acumuladas
     test_r2, test_rmse, test_mae = calculate_regression_metrics(
         results["y_test"], results["y_pred_test"]
     )
