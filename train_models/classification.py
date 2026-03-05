@@ -16,7 +16,7 @@ def run_classification_single_model(dist_powers, gaussians, covs, models, timest
         global_results_dir (str): Directorio global de resultados
         datasets_dir (str): Directorio de datasets
     """
-    total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * 8
+    total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * 2 # multiplicar por 2 para incluir CON y SIN OSNR
     experiment_count = 0
     ml_pbar = tqdm.tqdm(total=total_runs, desc='ML experiments', unit='run')
     
@@ -120,7 +120,7 @@ def run_classification_all_predictions(dist_powers, gaussians, covs, models, tim
         global_results_dir (str): Directorio global de resultados
         datasets_dir (str): Directorio de datasets
     """
-    total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * 8
+    total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * 2 # multiplicar por 2 para incluir CON y SIN OSNR
     experiment_count = 0
     ml_pbar = tqdm.tqdm(total=total_runs, desc='ML experiments (all predictions)', unit='run')
     
@@ -240,7 +240,7 @@ DATASETS_DIR = os.path.abspath(os.path.expanduser(DATASETS_DIR))
 os.makedirs(GLOBAL_RESULTS_DIR, exist_ok=True)
 
 timestamp = datetime.datetime.now().strftime("%m_%d_%H%M")
-run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, 'results_classification', f"run_{timestamp}")
+run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, f"run_{timestamp}")
 os.makedirs(run_output_dir, exist_ok=True)
 
 logger = setup_logger(run_output_dir)
@@ -256,7 +256,7 @@ logger.info("="*70)
 dist_powers = [(0,0), (270,0), (270,9)]
 gaussians = [16, 24, 32, 40, 48, 56, 64]
 covs = ["diag", "spherical"]
-models = ["DecisionTree"]
+models = ["DecisionTree", "RandomForest", "SVM", "XGBoost"]
 
 #=====================================================
 # Ejecutar experimentos

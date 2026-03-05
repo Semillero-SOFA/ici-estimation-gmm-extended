@@ -206,19 +206,25 @@ def accumulate_classification_results(results, tipo="train", acc=None, precision
     results["recall"][tipo].append(recall)
     results["f1_score"][tipo].append(f1)
 
-def extract_X_y_classification(data, include_osnr=True):
+def extract_X_y_classification(data, include_osnr=True, shuffle=True, random_state=42):
     """
     Extrae features y target para clasificación
     
     Args:
         data (pd.DataFrame): Dataset con columna 'spacing_class'
         include_osnr (bool): Si incluir OSNR como feature
+        shuffle (bool): Si aleatorizar el orden de las filas del dataset
+        random_state (int): Semilla para reproducibilidad del shuffle
     
     Returns:
         X (pd.DataFrame): Features
         y (pd.Series): Target (clases)
     """
     data = data.copy()
+    
+    # Aleatorizar el dataset si se solicita
+    if shuffle:
+        data = data.sample(frac=1, random_state=random_state).reset_index(drop=True)
     
     # Convertir OSNR si es string
     if data["osnr"].dtype == 'object':
@@ -238,6 +244,7 @@ def extract_X_y_classification(data, include_osnr=True):
 def initialize_classification_results():
     results = {}
     results["model_params"] = {}
+
     results["y_test"] = []
     results["y_pred_test"] = []
     results["acc"] = {"train": [], "test": []}
@@ -439,7 +446,7 @@ def train_test_classification_model(data, model_name, logger, n_classes="2", inc
     data_class = transform_to_classification(data, n_classes=n_classes, BD=BD)
     
     # 2. Extraer features y target
-    X, y = extract_X_y_classification(data_class, include_osnr=include_osnr)
+    X, y = extract_X_y_classification(data_class, include_osnr=include_osnr, shuffle=True, random_state=42)
     
     # 3. Configurar validación cruzada estratificada
     n_splits = 5
@@ -545,12 +552,14 @@ def train_test_classification_all_predictions(data, model_name, logger, n_classe
         dict: Resultados del entrenamiento y evaluación con métricas globales
     '''
     results = initialize_classification_results()
+
+    results_train_preds = {"y_train": [], "y_pred_train": []}
     
     # 1. Transformar datos a problema de clasificación
     data_class = transform_to_classification(data, n_classes=n_classes, BD=BD)
     
     # 2. Extraer features y target
-    X, y = extract_X_y_classification(data_class, include_osnr=include_osnr)
+    X, y = extract_X_y_classification(data_class, include_osnr=include_osnr, shuffle=True, random_state=42)
     
     # 3. Configurar validación cruzada estratificada
     n_splits = 5
@@ -595,24 +604,34 @@ def train_test_classification_all_predictions(data, model_name, logger, n_classe
         logger.info(f"Fold {index} - Modelo: {model_name} - Mejores parámetros: {model.best_params_}")
         
         # Predicciones
+        y_pred_train = model.predict(X_train_scaled)
         y_pred_test = model.predict(X_test_scaled)
         
-        # Acumular predicciones de test
+        # Acumular predicciones de train y test
+        results_train_preds["y_train"].extend(y_train)
+        results_train_preds["y_pred_train"].extend(y_pred_train)
         results["y_test"].extend(y_test)
         results["y_pred_test"].extend(y_pred_test)
         results["model_params"][index] = model.best_params_
     
     # 6. Calcular métricas globales sobre todas las predicciones acumuladas
     avg = 'weighted'
+    train_acc, train_prec, train_rec, train_f1 = calculate_classification_metrics(
+        results_train_preds["y_train"], results_train_preds["y_pred_train"], average=avg
+    )
     test_acc, test_prec, test_rec, test_f1 = calculate_classification_metrics(
         results["y_test"], results["y_pred_test"], average=avg
     )
     
     # Guardar métricas globales
-    results["acc"]["test"] = [test_acc]
-    results["precision"]["test"] = [test_prec]
-    results["recall"]["test"] = [test_rec]
-    results["f1_score"]["test"] = [test_f1]
+    results["acc"]["train"] = train_acc
+    results["precision"]["train"] = train_prec
+    results["recall"]["train"] = train_rec
+    results["f1_score"]["train"] = train_f1
+    results["acc"]["test"] = test_acc
+    results["precision"]["test"] = test_prec
+    results["recall"]["test"] = test_rec
+    results["f1_score"]["test"] = test_f1
     
     return results
 
@@ -631,19 +650,26 @@ def accumulate_regression_results(results, tipo = "train", r2=None, rmse=None, m
     results["rmse"][tipo].append(rmse)
     results["mae"][tipo].append(mae)
 
-def extract_X_y_regression(data, include_osnr=True):
+def extract_X_y_regression(data, include_osnr=True, shuffle=True, random_state=42):
     """
     Extracst features and target variable from the dataset.
 
     Args:
         data (pd.DataFrame): The input dataset containing features and target.
         include_osnr (bool): Whether to include the 'osnr' feature in X.
+        shuffle (bool): Si aleatorizar el orden de las filas del dataset
+        random_state (int): Semilla para reproducibilidad del shuffle
     Returns:
         X (pd.DataFrame): The feature set.
         y (pd.Series): The target variable (spacing).
     """
     # 1. Preparar datos
     data = data.copy()
+    
+    # Aleatorizar el dataset si se solicita
+    if shuffle:
+        data = data.sample(frac=1, random_state=random_state).reset_index(drop=True)
+    
     if data["osnr"].dtype == 'object':
         data["osnr"] = data["osnr"].str.replace('dB', '').astype(float)
     # Preparar datos
@@ -832,7 +858,7 @@ def train_test_regression_model(data, model_name, logger, include_osnr=True):
     """
     results = initialize_regression_results()
     # 1. Preparar datos
-    X, y = extract_X_y_regression(data, include_osnr=include_osnr)
+    X, y = extract_X_y_regression(data, include_osnr=include_osnr, shuffle=True, random_state=42)
     #X_scaled = scale_features(X, type="standard")
     n_splits = 5
     
@@ -912,9 +938,9 @@ def train_test_regression_all_models(data, model_name, logger, include_osnr=True
         dict: Resultados del entrenamiento y evaluación con métricas globales
     '''
     results = initialize_regression_results()
-    
+    results_train_preds = {"y_train": [], "y_pred_train": []}
     # 1. Preparar datos
-    X, y = extract_X_y_regression(data, include_osnr=include_osnr)
+    X, y = extract_X_y_regression(data, include_osnr=include_osnr, shuffle=True, random_state=42)
     
     # 2. Configurar validación cruzada estratificada
     n_splits = 5
@@ -956,21 +982,30 @@ def train_test_regression_all_models(data, model_name, logger, include_osnr=True
         logger.info(f"Fold {index} - Modelo: {model_name} - Mejores parámetros: {model.best_params_}")
         
         # Predicciones
+        y_pred_train = model.predict(X_train_scaled)
         y_pred_test = model.predict(X_test_scaled)
         
-        # Acumular predicciones de test
+        # Acumular predicciones de train y test
+        results_train_preds["y_train"].extend(y_train)
+        results_train_preds["y_pred_train"].extend(y_pred_train)
         results["y_test"].extend(y_test)
         results["y_pred_test"].extend(y_pred_test)
         results["model_params"][index] = model.best_params_
     
     # 5. Calcular métricas globales sobre todas las predicciones acumuladas
+    train_r2, train_rmse, train_mae = calculate_regression_metrics(
+        results_train_preds["y_train"], results_train_preds["y_pred_train"]
+    )
     test_r2, test_rmse, test_mae = calculate_regression_metrics(
         results["y_test"], results["y_pred_test"]
     )
     
     # Guardar métricas globales
-    results["r2"]["test"] = [test_r2]
-    results["rmse"]["test"] = [test_rmse]
-    results["mae"]["test"] = [test_mae]
+    results["r2"]["train"] = train_r2
+    results["rmse"]["train"] = train_rmse
+    results["mae"]["train"] = train_mae
+    results["r2"]["test"] = test_r2
+    results["rmse"]["test"] = test_rmse
+    results["mae"]["test"] = test_mae
     
     return results

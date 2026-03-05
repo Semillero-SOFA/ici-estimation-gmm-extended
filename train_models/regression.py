@@ -16,7 +16,7 @@ def run_regression_single_model(dist_powers, gaussians, covs, models, timestamp,
         global_results_dir (str): Directorio global de resultados
         datasets_dir (str): Directorio de datasets
     """
-    total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models)
+    total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * 2 # multiplicar por 2 para incluir CON y SIN OSNR    
     ml_pbar = tqdm.tqdm(total=total_runs, desc="ML Model Training Progress")
     
     for distancia, power in dist_powers:
@@ -92,7 +92,7 @@ def run_regression_all_models(dist_powers, gaussians, covs, models, timestamp, l
         global_results_dir (str): Directorio global de resultados
         datasets_dir (str): Directorio de datasets
     """
-    total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models)
+    total_runs = len(dist_powers) * len(gaussians) * len(covs) * len(models) * 2 # multiplicar por 2 para incluir CON y SIN OSNR
     ml_pbar = tqdm.tqdm(total=total_runs, desc="ML Model Training Progress (all models)")
     
     for distancia, power in dist_powers:
@@ -157,7 +157,7 @@ def run_regression_all_models(dist_powers, gaussians, covs, models, timestamp, l
 # Parse arguments
 #=====================================================
 parser = argparse.ArgumentParser(description='Train regression models')
-parser.add_argument('--mode', type=str, default='single', choices=['single', 'all'],
+parser.add_argument('--mode', type=str, default='all', choices=['single', 'all'],
                    help='Training mode: single (one model per fold) or all (multiple models)')
 parser.add_argument('--results_dir', type=str, default="D:/Semillero SOFA/gmm_32_definitivo",
                    help='Global results directory')
@@ -179,8 +179,8 @@ DATASETS_DIR = os.path.abspath(os.path.expanduser(DATASETS_DIR))
 os.makedirs(GLOBAL_RESULTS_DIR, exist_ok=True)
 
 timestamp = datetime.datetime.now().strftime("%m_%d_%H%M")
-run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, 'results_regression', f"run_{timestamp}")
-#os.makedirs(run_output_dir, exist_ok=True)
+run_output_dir = os.path.join(GLOBAL_RESULTS_DIR, f"run_{timestamp}")
+os.makedirs(run_output_dir, exist_ok=True)
 
 logger = setup_logger(run_output_dir)
 
@@ -194,7 +194,7 @@ logger.info(f"Directorio de resultados: {GLOBAL_RESULTS_DIR}")
 dist_powers = [(0,0), (270,0), (270,9)]
 gaussians = [16, 24, 32, 40, 48, 56, 64]
 covs = ["diag", "spherical"]
-models = ["RandomForest"]
+models = ["DecisionTree", "RandomForest", "SVM", "XGBoost"]
 
 #=====================================================
 # Ejecutar experimentos
@@ -206,5 +206,5 @@ if args.mode == 'single':
 else:
     # Opción 2: Entrenar cada modelo acumulando predicciones de todos los folds
     # Calcula métricas globales sobre todas las predicciones acumuladas
-    models_list = ["DecisionTree", "SVM", "RandomForest", "XGBoost"]
+    models_list = ["DecisionTree", "RandomForest", "SVM", "XGBoost"]
     run_regression_all_models(dist_powers, gaussians, covs, models_list, timestamp, logger, GLOBAL_RESULTS_DIR, DATASETS_DIR)
