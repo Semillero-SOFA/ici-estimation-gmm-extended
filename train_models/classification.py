@@ -164,33 +164,16 @@ def run_classification_all_predictions(dist_powers, gaussians, covs, models, tim
                                 include_osnr=True,
                                 BD=(distancia, power)
                             )
+
+                                                        
+                            filename_w = os.path.join(output_dir, f'class_results_w_{n_classes}classes.csv')
+                            save_classification_results_all_preds(results_w, filename_w,
+                                                       gaussian, cov, model_name, n_classes)
+                            save_classification_results_detailed(results_w, os.path.join(output_dir, f'class_results_detailed_w_{n_classes}classes.json'),
+                                                                 gaussian, cov, model_name, n_classes, logger)
+                        
                             
-                            acc_test = np.mean(results_w['acc']['test'])
-                            prec_test = np.mean(results_w['precision']['test'])
-                            rec_test = np.mean(results_w['recall']['test'])
-                            f1_test = np.mean(results_w['f1_score']['test'])
-                            
-                            logger.info(f"Métricas globales CON OSNR - Acc: {acc_test:.4f}, Prec: {prec_test:.4f}, Rec: {rec_test:.4f}, F1: {f1_test:.4f}")
-                            
-                            filename_w = os.path.join(output_dir, f'class_results_all_w_{n_classes}classes_{model_name}.json')
-                            with open(filename_w, 'w') as f:
-                                json.dump({
-                                    'gaussian': gaussian,
-                                    'covariance': cov,
-                                    'n_classes': n_classes,
-                                    'model': model_name,
-                                    'metrics': {
-                                        'acc_test': acc_test,
-                                        'precision_test': prec_test,
-                                        'recall_test': rec_test,
-                                        'f1_score_test': f1_test
-                                    },
-                                    'model_params': results_w['model_params'],
-                                    'predictions': {
-                                        'y_test': [int(y) for y in results_w['y_test']],
-                                        'y_pred_test': [int(y) for y in results_w['y_pred_test']]
-                                    }
-                                }, f, indent=4)
+
                             logger.info(f"Resultados CON OSNR guardados en: {filename_w}")
                             
                         except Exception as e:
@@ -207,32 +190,13 @@ def run_classification_all_predictions(dist_powers, gaussians, covs, models, tim
                                 BD=(distancia, power)
                             )
                             
-                            acc_test = np.mean(results_wo['acc']['test'])
-                            prec_test = np.mean(results_wo['precision']['test'])
-                            rec_test = np.mean(results_wo['recall']['test'])
-                            f1_test = np.mean(results_wo['f1_score']['test'])
-                            
-                            logger.info(f"Métricas globales SIN OSNR - Acc: {acc_test:.4f}, Prec: {prec_test:.4f}, Rec: {rec_test:.4f}, F1: {f1_test:.4f}")
-                            
-                            filename_wo = os.path.join(output_dir, f'class_results_all_wo_{n_classes}classes_{model_name}.json')
-                            with open(filename_wo, 'w') as f:
-                                json.dump({
-                                    'gaussian': gaussian,
-                                    'covariance': cov,
-                                    'n_classes': n_classes,
-                                    'model': model_name,
-                                    'metrics': {
-                                        'acc_test': acc_test,
-                                        'precision_test': prec_test,
-                                        'recall_test': rec_test,
-                                        'f1_score_test': f1_test
-                                    },
-                                    'model_params': results_wo['model_params'],
-                                    'predictions': {
-                                        'y_test': [int(y) for y in results_wo['y_test']],
-                                        'y_pred_test': [int(y) for y in results_wo['y_pred_test']]
-                                    }
-                                }, f, indent=4)
+                                                        
+                            filename_wo = os.path.join(output_dir, f'class_results_wo_{n_classes}classes.csv')
+                            save_classification_results_all_preds(results_wo, filename_wo,
+                                                       gaussian, cov, model_name, n_classes)
+                            save_classification_results_detailed(results_wo, os.path.join(output_dir, f'class_results_detailed_wo_{n_classes}classes.json'),
+                                                                 gaussian, cov, model_name, n_classes, logger)
+
                             logger.info(f"Resultados SIN OSNR guardados en: {filename_wo}")
                             
                         except Exception as e:
@@ -254,7 +218,7 @@ def run_classification_all_predictions(dist_powers, gaussians, covs, models, tim
 # Parse arguments
 #=====================================================
 parser = argparse.ArgumentParser(description='Train classification models')
-parser.add_argument('--mode', type=str, default='single', choices=['single', 'all'],
+parser.add_argument('--mode', type=str, default='all', choices=['single', 'all'],
                    help='Training mode: single (one model per fold) or all (multiple models)')
 parser.add_argument('--results_dir', type=str, default="D:/Semillero SOFA/gmm_32_definitivo",
                    help='Global results directory')
@@ -292,7 +256,7 @@ logger.info("="*70)
 dist_powers = [(0,0), (270,0), (270,9)]
 gaussians = [16, 24, 32, 40, 48, 56, 64]
 covs = ["diag", "spherical"]
-models = ["DecisionTree", "SVM", "RandomForest", "XGBoost"]
+models = ["DecisionTree"]
 
 #=====================================================
 # Ejecutar experimentos
@@ -305,3 +269,6 @@ else:
     # Opción 2: Entrenar cada modelo acumulando predicciones de todos los folds
     # Calcula métricas globales sobre todas las predicciones acumuladas
     run_classification_all_predictions(dist_powers, gaussians, covs, models, timestamp, logger, GLOBAL_RESULTS_DIR, DATASETS_DIR)
+
+#ejemplo de ejecución:
+# python classification.py --mode all 

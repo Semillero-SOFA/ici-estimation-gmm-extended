@@ -303,6 +303,41 @@ def save_classification_results(results, path_file, gaussian, covariance, model,
       
     current_results = pd.concat([current_results, df_results], ignore_index=True)
     current_results.to_csv(path_file, index=False)
+
+def save_classification_results_all_preds(results, path_file, gaussian, covariance, model, n_classes):
+    """
+    Guarda los resultados de clasificación en un CSV para modelos con validación de todas las predicciones acumuladas (sin promediar por fold)
+    """
+    # Crear directorio padre si no existe
+    dir_path = os.path.dirname(path_file)
+    if dir_path:  # Solo si hay un directorio en la ruta
+        os.makedirs(dir_path, exist_ok=True)
+
+    if os.path.exists(path_file):
+        # Save backup
+        backup_path = path_file + ".bak"
+        shutil.copy2(path_file, backup_path)
+        current_results = pd.read_csv(path_file)
+    else:
+        current_results = pd.DataFrame()
+        
+    dict_results = {}
+    metrics = ['acc', 'precision', 'recall', 'f1_score']
+    for key, value in results.items():
+        if key in metrics:
+            dict_results[f"{key}_train"] = value['train']
+            dict_results[f"{key}_test"] = value['test']
+    
+    dict_results['gaussian'] = gaussian
+    dict_results['n_classes'] = n_classes
+    dict_results['covariance'] = covariance
+    dict_results['model_name'] = model
+
+    df_results = pd.DataFrame([dict_results])
+      
+    current_results = pd.concat([current_results, df_results], ignore_index=True)
+    current_results.to_csv(path_file, index=False)
+
 def save_classification_results_detailed(results, path_file, gaussian, covariance, model, n_classes,logger):
     """
     Save raw results (without averaging) for each fold)
@@ -339,6 +374,8 @@ def save_classification_results_detailed(results, path_file, gaussian, covarianc
                                 'f1_score': results['f1_score']
                             },
                             'model_params': results['model_params'],
+                            'y_test': [int(x) for x in results['y_test']],
+                            'y_pred_test': [int(x) for x in results['y_pred_test']]
                             }
                     }
                 }
@@ -371,6 +408,8 @@ def save_classification_results_detailed(results, path_file, gaussian, covarianc
                     'f1_score': results['f1_score']
                 },
             'model_params': results['model_params'],
+            'y_test': [int(x) for x in results['y_test']],
+            'y_pred_test': [int(x) for x in results['y_pred_test']]
         }
 
     # Save the updated results
@@ -679,6 +718,33 @@ def save_regression_results(results, path_file, gaussian, covariance, model, log
     log_msg = f"Saved regression {gaussian} gaussians, {covariance} covariance, model {model} results to {path_file}"
     logger.info(log_msg)
 
+def save_regression_results_all_preds(results, path_file, gaussian, covariance, model, logger):
+    # Crear directorio padre si no existe
+    dir_path = os.path.dirname(path_file)
+    if dir_path:  # Solo si hay un directorio en la ruta
+        os.makedirs(dir_path, exist_ok=True)
+   
+    dict_results = {}
+    metrics = ['mae', 'r2', 'rmse']
+    for key, value in results.items(): # Iterate over the metrics
+        if key in metrics:
+            dict_results[f"{key}_train"] = np.mean(value['train'])
+            dict_results[f"{key}_test"] = np.mean(value['test'])
+    dict_results['gaussian'] = gaussian
+    dict_results['covariance'] = covariance
+    dict_results['model_name'] = model
+
+    df_results = pd.DataFrame([dict_results])
+    if os.path.exists(path_file):
+        current_results = pd.read_csv(path_file)
+    else:
+        current_results = pd.DataFrame()
+        
+    current_results = pd.concat([current_results, df_results], ignore_index=True)
+    current_results.to_csv(path_file, index=False)
+    log_msg = f"Saved regression {gaussian} gaussians, {covariance} covariance, model {model} results to {path_file}"
+    logger.info(log_msg)
+
 def save_regression_results_detailed(results, path_file, gaussian, covariance, model, logger):
     """
     Save raw results (without averaging) for each fold)
@@ -712,6 +778,8 @@ def save_regression_results_detailed(results, path_file, gaussian, covariance, m
                         'rmse': results['rmse'],
                     },
                     'model_params': results['model_params'],
+                    'y_test': [float(x) for x in results['y_test']],
+                    'y_pred_test': [float(x) for x in results['y_pred_test']],
                     }
                 }
             }
@@ -738,6 +806,8 @@ def save_regression_results_detailed(results, path_file, gaussian, covariance, m
                 'rmse': results['rmse'],
             },
             'model_params': results['model_params'],
+            'y_test': [float(x) for x in results['y_test']],
+            'y_pred_test': [float(x) for x in results['y_pred_test']],
         }
 
     # Save the updated results

@@ -116,30 +116,13 @@ def run_regression_all_models(dist_powers, gaussians, covs, models, timestamp, l
                         logger.info(f"\nEntrenando {model_name} CON OSNR - acumulando predicciones...")
                         results_w = train_test_regression_all_models(database, model_name, logger, include_osnr=True)
                         
-                        r2_test = np.mean(results_w['r2']['test'])
-                        rmse_test = np.mean(results_w['rmse']['test'])
-                        mae_test = np.mean(results_w['mae']['test'])
                         
-                        logger.info(f"Métricas globales CON OSNR - R2: {r2_test:.4f}, RMSE: {rmse_test:.4f}, MAE: {mae_test:.4f}")
+                        filename = os.path.join(output_dir, f'reg_results_w.csv')
+                        save_regression_results_all_preds(results_w, filename, gaussian, cov, model_name, logger)
                         
-                        filename_w = os.path.join(output_dir, f'reg_results_all_w_{model_name}.json')
-                        with open(filename_w, 'w') as f:
-                            json.dump({
-                                'gaussian': gaussian,
-                                'covariance': cov,
-                                'model': model_name,
-                                'metrics': {
-                                    'r2_test': r2_test,
-                                    'rmse_test': rmse_test,
-                                    'mae_test': mae_test
-                                },
-                                'model_params': results_w['model_params'],
-                                'predictions': {
-                                    'y_test': [float(y) for y in results_w['y_test']],
-                                    'y_pred_test': [float(y) for y in results_w['y_pred_test']]
-                                }
-                            }, f, indent=4)
-                        logger.info(f"Resultados CON OSNR guardados en: {filename_w}")
+                        filename_detailed = os.path.join(output_dir, f'reg_results_w_detailed.json')
+                        save_regression_results_detailed(results_w, filename_detailed, gaussian, cov, model_name, logger)
+                        logger.info(f"Resultados CON OSNR guardados en: {filename}")
                         
                     except Exception as e:
                         logger.error(f"ERROR en entrenamiento CON OSNR: {e}")
@@ -148,29 +131,11 @@ def run_regression_all_models(dist_powers, gaussians, covs, models, timestamp, l
                         logger.info(f"\nEntrenando {model_name} SIN OSNR - acumulando predicciones...")
                         results_wo = train_test_regression_all_models(database, model_name, logger, include_osnr=False)
                         
-                        r2_test = np.mean(results_wo['r2']['test'])
-                        rmse_test = np.mean(results_wo['rmse']['test'])
-                        mae_test = np.mean(results_wo['mae']['test'])
+                        filename_wo = os.path.join(output_dir, f'reg_results_wo.csv')
+                        save_regression_results_all_preds(results_wo, filename_wo, gaussian, cov, model_name, logger)
                         
-                        logger.info(f"Métricas globales SIN OSNR - R2: {r2_test:.4f}, RMSE: {rmse_test:.4f}, MAE: {mae_test:.4f}")
-                        
-                        filename_wo = os.path.join(output_dir, f'reg_results_all_wo_{model_name}.json')
-                        with open(filename_wo, 'w') as f:
-                            json.dump({
-                                'gaussian': gaussian,
-                                'covariance': cov,
-                                'model': model_name,
-                                'metrics': {
-                                    'r2_test': r2_test,
-                                    'rmse_test': rmse_test,
-                                    'mae_test': mae_test
-                                },
-                                'model_params': results_wo['model_params'],
-                                'predictions': {
-                                    'y_test': [float(y) for y in results_wo['y_test']],
-                                    'y_pred_test': [float(y) for y in results_wo['y_pred_test']]
-                                }
-                            }, f, indent=4)
+                        filename_detailed = os.path.join(output_dir, f'reg_results_wo_detailed.json')
+                        save_regression_results_detailed(results_wo, filename_detailed, gaussian, cov, model_name, logger)
                         logger.info(f"Resultados SIN OSNR guardados en: {filename_wo}")
                         
                     except Exception as e:
